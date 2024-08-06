@@ -606,7 +606,6 @@ class Mailer < ActionMailer::Base
           " AND #{Project.table_name}.status = #{Project::STATUS_ACTIVE}" \
           " AND #{Issue.table_name}.due_date <= ?", days.day.from_now.to_date
       )
-    scope = scope.where(:assigned_to_id => user_ids) if user_ids.present?
     scope = scope.where(:project_id => project.id) if project
     scope = scope.where(:fixed_version_id => target_version_id) if target_version_id.present?
     scope = scope.where(:tracker_id => tracker.id) if tracker
@@ -622,7 +621,7 @@ class Mailer < ActionMailer::Base
     end
 
     issues_by_assignee.each do |assignee, issues|
-      if assignee.is_a?(User) && assignee.active? && issues.present?
+      if assignee.is_a?(User) && user_ids.include?(assignee.id.to_s) && assignee.active? && issues.present?
         visible_issues = issues.select {|i| i.visible?(assignee)}
         visible_issues.sort!{|a, b| (a.due_date <=> b.due_date).nonzero? || (a.id <=> b.id)}
         reminder(assignee, visible_issues, days).deliver_later if visible_issues.present?
