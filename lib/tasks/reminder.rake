@@ -33,6 +33,7 @@ namespace :redmine do
   task :send_reminders => :environment do
     options = {}
     options[:days] = ENV['days'].presence&.to_i
+    options[:days_min] = ENV['days_min'].presence&.to_i
     options[:project] = ENV['project'].presence
     options[:tracker] = ENV['tracker'].presence&.to_i
     options[:users] = ENV['users'].presence.to_s.split(',').each(&:strip!)

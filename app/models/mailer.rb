@@ -585,12 +585,14 @@ class Mailer < ActionMailer::Base
   # Sends reminders to issue assignees
   # Available options:
   # * :days     => how many days in the future to remind about (defaults to 7)
+  # * :days_min => how many days in the future to remind about at minimum (defaults to 0)
   # * :tracker  => id of tracker for filtering issues (defaults to all trackers)
   # * :project  => id or identifier of project to process (defaults to all projects)
   # * :users    => array of user/group ids who should be reminded
   # * :version  => name of target version for filtering issues (defaults to none)
   def self.reminders(options={})
     days = options[:days] || 7
+    days_min = options[:days_min] || 0
     project = options[:project] ? Project.find(options[:project]) : nil
     tracker = options[:tracker] ? Tracker.find(options[:tracker]) : nil
     target_version_id = options[:version] ? Version.named(options[:version]).pluck(:id) : nil
@@ -604,7 +606,9 @@ class Mailer < ActionMailer::Base
       Issue.open.where(
         "#{Issue.table_name}.assigned_to_id IS NOT NULL" \
           " AND #{Project.table_name}.status = #{Project::STATUS_ACTIVE}" \
-          " AND #{Issue.table_name}.due_date <= ?", days.day.from_now.to_date
+          " AND #{Issue.table_name}.due_date <= ?" \
+          " AND #{Issue.table_name}.due_date >= ?",
+        days.day.from_now.to_date, days_min.day.from_now.to_date
       )
     scope = scope.where(:project_id => project.id) if project
     scope = scope.where(:fixed_version_id => target_version_id) if target_version_id.present?
